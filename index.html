@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>PDF Presenter</title>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.9.359/pdf.min.js"></script>
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/icon?family=Material+Icons"
+    />
+    <style>
+      /* For Webkit browsers (Chrome, Safari) */
+      *::-webkit-scrollbar {
+        width: 8px; /* Width of the scrollbar */
+      }
+
+      *::-webkit-scrollbar-track {
+        width: 8px; /* Width of the scrollbar */
+        background: rgba(0, 0, 0, 0.1); /* Track color and transparency */
+      }
+
+      *::-webkit-scrollbar-thumb {
+        background: rgba(0, 0, 0, 0.1); /* Thumb color and transparency */
+      }
+      *::-webkit-scrollbar-thumb:hover {
+        background: rgba(0, 0, 0, 0.15); /* Thumb color and transparency */
+      }
+      *::-webkit-scrollbar-thumb:active {
+        background: rgba(0, 0, 0, 0.2); /* Thumb color and transparency */
+      }
+
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+        font-family: inherit;
+      }
+      dialog {
+        margin: auto;
+        border: 0;
+      }
+      body {
+        overflow: hidden;
+        background: rgb(20, 20, 20);
+        box-shadow: inset 0 0 200px black;
+        width: 100vw;
+        height: 100vh;
+        display: grid;
+        place-items: center;
+        font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+          Roboto, Oxygen, Ubuntu, Cantarell, "Open Sans", "Helvetica Neue",
+          sans-serif;
+      }
+
+      .card {
+        padding: 1.25rem;
+        border-radius: 2rem;
+        background: white;
+        box-shadow: 0 0 20px black;
+        width: fit-content;
+      }
+      h1,
+      h2,
+      h3,
+      h4,
+      h5,
+      h6 {
+        font-weight: 300;
+      }
+      input[type="file"] {
+        width: 8rem;
+      }
+      input[type="file"]::file-selector-button,
+      .tealbutton {
+        background: teal;
+        outline: 0;
+        color: white;
+        font-size: 1rem;
+        border: 0;
+        font-family: inherit;
+        padding: 0.5rem 1.5rem;
+        border-radius: 999rem;
+        width: 8rem;
+        cursor: pointer;
+        transition: all 0.1s;
+      }
+      input[type="file"]::file-selector-button:hover,
+      .tealbutton:hover {
+        background: rgb(0, 98, 98);
+      }
+      input[type="file"]::file-selector-button:active,
+      .tealbutton:active {
+        background: rgb(0, 65, 65);
+      }
+      .paddle {
+        background: #fff1;
+        cursor: pointer;
+        font-size: 2rem;
+        border: 0;
+        font-family: inherit;
+        padding: 0.1rem 0.5rem;
+        border-radius: 99rem;
+        z-index: 2;
+      }
+      .paddle:hover {
+        background: #fff4;
+      }
+      .paddle i::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: inherit;
+        filter: invert(1) grayscale(1);
+        z-index: -1;
+      }
+      .paddle i {
+        position: relative;
+        color: white;
+        mix-blend-mode: difference;
+      }
+
+      input[type="checkbox"] {
+        -webkit-appearance: none;
+        -moz-appearance: none;
+        appearance: none;
+        width: 25px; /* Adjusted width for a smaller checkbox */
+        height: 25px; /* Adjusted height for a smaller checkbox */
+        border: 2px solid teal;
+        border-radius: 50%; /* Circular shape */
+        outline: none;
+        cursor: pointer;
+        position: relative;
+        background-color: white;
+        display: block;
+      } /* Style the checked state with SVG and teal background */
+      input[type="checkbox"]:checked {
+        background-color: teal;
+      }
+      input[type="checkbox"]:checked::before {
+        content: "";
+        display: block;
+        width: 20px;
+        height: 20px;
+        background-image: url('data:image/svg+xml;charset=UTF-8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 25 25" fill="white"><path d="M20.285 2.29a1 1 0 0 0-1.415 0l-12.4 12.42-5.29-5.3A1 1 0 0 0 .29 10.7l6 6a1 1 0 0 0 1.42-.01l13.57-13.56a1 1 0 0 0 .005-1.414z"/></svg>');
+        background-size: contain; /* Ensures the SVG is contained within the area */
+        background-repeat: no-repeat;
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-40%, -40%);
+      }
+      .tpbtn {
+        border: 0;
+        background: none;
+        outline: 0;
+      }
+      button {
+        cursor: pointer;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="card" id="fscard">
+      <div style="position: fixed; left: 1rem; top: 1rem; opacity: 0.9">
+        <svg
+          height="2.5rem"
+          viewBox="0 0 548 89"
+          fill="none"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <path
+            d="M104.591 28.9773C104.667 27.0833 104.114 25.6212 102.932 24.5909C101.765 23.5606 100 23.0455 97.6364 23.0455C96.0303 23.0455 94.6364 23.2727 93.4545 23.7273C92.2727 24.1667 91.3258 24.7803 90.6136 25.5682C89.9167 26.3409 89.4848 27.2348 89.3182 28.25C89.1515 29.0833 89.2045 29.8106 89.4773 30.4318C89.7652 31.053 90.2121 31.5909 90.8182 32.0455C91.4394 32.4848 92.1742 32.8712 93.0227 33.2045C93.8712 33.5227 94.7727 33.7955 95.7273 34.0227L99.7273 35.0227C101.682 35.4773 103.439 36.0833 105 36.8409C106.576 37.5985 107.894 38.5303 108.955 39.6364C110.03 40.7424 110.788 42.0455 111.227 43.5455C111.667 45.0455 111.727 46.7652 111.409 48.7045C110.924 51.553 109.795 54.0227 108.023 56.1136C106.25 58.1894 103.924 59.803 101.045 60.9545C98.1667 62.0909 94.8333 62.6591 91.0455 62.6591C87.2879 62.6591 84.1136 62.0833 81.5227 60.9318C78.9318 59.7803 77.0455 58.0758 75.8636 55.8182C74.697 53.5455 74.3485 50.7348 74.8182 47.3864H84.3409C84.1742 48.947 84.4015 50.25 85.0227 51.2955C85.6591 52.3258 86.6061 53.1061 87.8636 53.6364C89.1212 54.1515 90.5985 54.4091 92.2955 54.4091C93.9773 54.4091 95.4697 54.1667 96.7727 53.6818C98.0909 53.197 99.1591 52.5227 99.9773 51.6591C100.795 50.7955 101.295 49.803 101.477 48.6818C101.659 47.6364 101.5 46.7576 101 46.0455C100.5 45.3333 99.697 44.7273 98.5909 44.2273C97.5 43.7121 96.1439 43.2576 94.5227 42.8636L89.6591 41.5909C85.9015 40.6364 83.0606 39.1439 81.1364 37.1136C79.2121 35.0833 78.5227 32.3485 79.0682 28.9091C79.553 26.0909 80.7273 23.6288 82.5909 21.5227C84.4697 19.4015 86.8333 17.7576 89.6818 16.5909C92.5455 15.4091 95.6742 14.8182 99.0682 14.8182C102.523 14.8182 105.439 15.4167 107.818 16.6136C110.197 17.7955 111.932 19.447 113.023 21.5682C114.114 23.6894 114.447 26.1591 114.023 28.9773H104.591ZM115.642 62L121.46 27.0909H131.142L125.324 62H115.642ZM127.301 22.5455C125.862 22.5455 124.672 22.0682 123.733 21.1136C122.809 20.1439 122.43 18.9924 122.597 17.6591C122.763 16.2955 123.415 15.1439 124.551 14.2045C125.688 13.25 126.975 12.7727 128.415 12.7727C129.854 12.7727 131.028 13.25 131.938 14.2045C132.847 15.1439 133.225 16.2955 133.074 17.6591C132.922 18.9924 132.278 20.1439 131.142 21.1136C130.021 22.0682 128.741 22.5455 127.301 22.5455ZM133.148 62L138.966 27.0909H148.17L147.17 33.25H147.557C148.617 31.2045 150.095 29.5909 151.989 28.4091C153.898 27.2273 156.042 26.6364 158.42 26.6364C160.784 26.6364 162.708 27.2348 164.193 28.4318C165.693 29.6136 166.557 31.2197 166.784 33.25H167.148C168.178 31.25 169.731 29.6515 171.807 28.4545C173.883 27.2424 176.201 26.6364 178.761 26.6364C181.989 26.6364 184.458 27.6742 186.17 29.75C187.883 31.8258 188.42 34.75 187.784 38.5227L183.875 62H174.193L177.83 40.4318C178.117 38.4773 177.83 37.0227 176.966 36.0682C176.102 35.0985 174.898 34.6136 173.352 34.6136C171.595 34.6136 170.133 35.1742 168.966 36.2955C167.799 37.4015 167.08 38.8636 166.807 40.6818L163.193 62H153.807L157.489 40.2273C157.746 38.5 157.466 37.1364 156.648 36.1364C155.845 35.1212 154.64 34.6136 153.034 34.6136C151.973 34.6136 150.966 34.8864 150.011 35.4318C149.072 35.9621 148.277 36.7121 147.625 37.6818C146.973 38.6364 146.549 39.7576 146.352 41.0455L142.807 62H133.148ZM189.341 75.0909L197.386 27.0909H206.932L205.955 32.9545H206.386C206.962 32.0152 207.727 31.0606 208.682 30.0909C209.652 29.1061 210.856 28.2879 212.295 27.6364C213.735 26.9697 215.424 26.6364 217.364 26.6364C219.924 26.6364 222.159 27.303 224.068 28.6364C225.977 29.9545 227.356 31.947 228.205 34.6136C229.068 37.2652 229.167 40.5909 228.5 44.5909C227.864 48.4848 226.689 51.7727 224.977 54.4545C223.28 57.1212 221.242 59.1439 218.864 60.5227C216.5 61.8864 213.992 62.5682 211.341 62.5682C209.462 62.5682 207.917 62.2576 206.705 61.6364C205.508 61.0152 204.576 60.2348 203.909 59.2955C203.242 58.3409 202.773 57.3788 202.5 56.4091H202.136L199.045 75.0909H189.341ZM203.955 44.5455C203.621 46.6212 203.606 48.4318 203.909 49.9773C204.227 51.5227 204.864 52.7273 205.818 53.5909C206.773 54.4394 208.03 54.8636 209.591 54.8636C211.167 54.8636 212.568 54.4318 213.795 53.5682C215.023 52.6894 216.045 51.4773 216.864 49.9318C217.682 48.3712 218.265 46.5758 218.614 44.5455C218.932 42.5303 218.939 40.7576 218.636 39.2273C218.333 37.697 217.712 36.5 216.773 35.6364C215.833 34.7727 214.561 34.3409 212.955 34.3409C211.394 34.3409 209.992 34.7576 208.75 35.5909C207.523 36.4242 206.5 37.6061 205.682 39.1364C204.864 40.6667 204.288 42.4697 203.955 44.5455ZM249.426 15.4545L241.699 62H232.017L239.744 15.4545H249.426ZM253.295 75.0909C252.053 75.0909 250.917 74.9924 249.886 74.7955C248.856 74.6136 248.008 74.3788 247.341 74.0909L250.75 66.8636C251.826 67.2121 252.803 67.3939 253.682 67.4091C254.576 67.4242 255.394 67.197 256.136 66.7273C256.879 66.2576 257.561 65.4848 258.182 64.4091L259.045 62.9318L252.5 27.0909H262.318L265.273 52.7727H265.636L277.205 27.0909H287.818L267.841 65.7727C266.856 67.6667 265.689 69.3106 264.341 70.7045C263.008 72.0985 261.424 73.1742 259.591 73.9318C257.773 74.7045 255.674 75.0909 253.295 75.0909Z"
+            fill="#00D3DA"
+          />
+          <path
+            d="M287.136 62L294.864 15.4545H313.227C316.742 15.4545 319.629 16.1288 321.886 17.4773C324.159 18.8106 325.75 20.6667 326.659 23.0455C327.583 25.4091 327.795 28.1364 327.295 31.2273C326.78 34.3333 325.659 37.0682 323.932 39.4318C322.22 41.7803 319.992 43.6136 317.25 44.9318C314.508 46.25 311.341 46.9091 307.75 46.9091H296.045L297.341 39.0227H307.455C309.364 39.0227 310.992 38.697 312.341 38.0455C313.705 37.3788 314.788 36.4621 315.591 35.2955C316.394 34.1136 316.917 32.7576 317.159 31.2273C317.417 29.6667 317.333 28.3106 316.909 27.1591C316.485 26.0076 315.705 25.1136 314.568 24.4773C313.447 23.8258 311.939 23.5 310.045 23.5H303.409L296.977 62H287.136ZM328.392 62L334.21 27.0909H343.597L342.574 33.1818H342.938C343.938 31.0152 345.278 29.3788 346.96 28.2727C348.657 27.1515 350.483 26.5909 352.438 26.5909C352.922 26.5909 353.43 26.6212 353.96 26.6818C354.506 26.7273 354.991 26.803 355.415 26.9091L353.96 35.5227C353.536 35.3712 352.93 35.25 352.142 35.1591C351.369 35.053 350.634 35 349.938 35C348.528 35 347.218 35.3106 346.006 35.9318C344.794 36.5379 343.771 37.3864 342.938 38.4773C342.119 39.5682 341.581 40.8258 341.324 42.25L338.074 62H328.392ZM368.773 62.6818C365.197 62.6818 362.235 61.9545 359.886 60.5C357.538 59.0303 355.886 56.9545 354.932 54.2727C353.992 51.5758 353.833 48.3864 354.455 44.7045C355.061 41.1136 356.28 37.9621 358.114 35.25C359.962 32.5379 362.28 30.4242 365.068 28.9091C367.856 27.3939 370.962 26.6364 374.386 26.6364C376.689 26.6364 378.773 27.0076 380.636 27.75C382.515 28.4773 384.076 29.5833 385.318 31.0682C386.561 32.5379 387.409 34.3788 387.864 36.5909C388.333 38.803 388.326 41.3939 387.841 44.3636L387.409 47.0227H357.955L358.886 41.0227H379.25C379.477 39.6288 379.386 38.3939 378.977 37.3182C378.568 36.2424 377.886 35.4015 376.932 34.7955C375.977 34.1742 374.803 33.8636 373.409 33.8636C371.985 33.8636 370.652 34.2121 369.409 34.9091C368.167 35.6061 367.121 36.5227 366.273 37.6591C365.439 38.7803 364.902 40 364.659 41.3182L363.591 47.2727C363.288 49.1061 363.348 50.6288 363.773 51.8409C364.212 53.053 364.97 53.9621 366.045 54.5682C367.121 55.1591 368.485 55.4545 370.136 55.4545C371.212 55.4545 372.22 55.303 373.159 55C374.114 54.697 374.962 54.25 375.705 53.6591C376.447 53.053 377.053 52.303 377.523 51.4091L386.364 52C385.545 54.1515 384.303 56.0303 382.636 57.6364C380.97 59.2273 378.962 60.4697 376.614 61.3636C374.28 62.2424 371.667 62.6818 368.773 62.6818ZM424.426 37.0455L415.631 37.5909C415.585 36.8182 415.373 36.1288 414.994 35.5227C414.631 34.9015 414.093 34.4091 413.381 34.0455C412.684 33.6818 411.805 33.5 410.744 33.5C409.153 33.5 407.737 33.8636 406.494 34.5909C405.252 35.3182 404.547 36.25 404.381 37.3864C404.244 38.1136 404.434 38.7273 404.949 39.2273C405.464 39.7273 406.502 40.1515 408.062 40.5L414.199 41.7727C417.472 42.4697 419.835 43.6288 421.29 45.25C422.759 46.8712 423.282 48.9924 422.858 51.6136C422.479 53.8409 421.502 55.7879 419.926 57.4545C418.35 59.1061 416.35 60.3939 413.926 61.3182C411.502 62.2273 408.813 62.6818 405.858 62.6818C401.116 62.6818 397.509 61.7121 395.04 59.7727C392.57 57.8333 391.381 55.2045 391.472 51.8864L400.926 51.3864C401.002 52.8106 401.502 53.8864 402.426 54.6136C403.35 55.3258 404.616 55.6894 406.222 55.7045C408.025 55.7348 409.555 55.3636 410.812 54.5909C412.085 53.803 412.805 52.8485 412.972 51.7273C413.093 50.9394 412.866 50.303 412.29 49.8182C411.729 49.3333 410.699 48.9318 409.199 48.6136L403.381 47.4091C400.078 46.7273 397.706 45.5076 396.267 43.75C394.828 41.9924 394.335 39.7576 394.79 37.0455C395.153 34.8788 396.055 33.0227 397.494 31.4773C398.949 29.9167 400.82 28.7197 403.108 27.8864C405.411 27.053 408.009 26.6364 410.903 26.6364C415.434 26.6364 418.843 27.5682 421.131 29.4318C423.434 31.2955 424.532 33.8333 424.426 37.0455ZM443.023 62.6818C439.447 62.6818 436.485 61.9545 434.136 60.5C431.788 59.0303 430.136 56.9545 429.182 54.2727C428.242 51.5758 428.083 48.3864 428.705 44.7045C429.311 41.1136 430.53 37.9621 432.364 35.25C434.212 32.5379 436.53 30.4242 439.318 28.9091C442.106 27.3939 445.212 26.6364 448.636 26.6364C450.939 26.6364 453.023 27.0076 454.886 27.75C456.765 28.4773 458.326 29.5833 459.568 31.0682C460.811 32.5379 461.659 34.3788 462.114 36.5909C462.583 38.803 462.576 41.3939 462.091 44.3636L461.659 47.0227H432.205L433.136 41.0227H453.5C453.727 39.6288 453.636 38.3939 453.227 37.3182C452.818 36.2424 452.136 35.4015 451.182 34.7955C450.227 34.1742 449.053 33.8636 447.659 33.8636C446.235 33.8636 444.902 34.2121 443.659 34.9091C442.417 35.6061 441.371 36.5227 440.523 37.6591C439.689 38.7803 439.152 40 438.909 41.3182L437.841 47.2727C437.538 49.1061 437.598 50.6288 438.023 51.8409C438.462 53.053 439.22 53.9621 440.295 54.5682C441.371 55.1591 442.735 55.4545 444.386 55.4545C445.462 55.4545 446.47 55.303 447.409 55C448.364 54.697 449.212 54.25 449.955 53.6591C450.697 53.053 451.303 52.303 451.773 51.4091L460.614 52C459.795 54.1515 458.553 56.0303 456.886 57.6364C455.22 59.2273 453.212 60.4697 450.864 61.3636C448.53 62.2424 445.917 62.6818 443.023 62.6818ZM478.608 41.8182L475.244 62H465.585L471.403 27.0909H480.608L479.608 33.25H479.994C481.1 31.2045 482.661 29.5909 484.676 28.4091C486.706 27.2273 489.017 26.6364 491.608 26.6364C494.032 26.6364 496.055 27.1667 497.676 28.2273C499.313 29.2879 500.464 30.7955 501.131 32.75C501.813 34.7045 501.926 37.0455 501.472 39.7727L497.744 62H488.062L491.494 41.5C491.843 39.3636 491.57 37.697 490.676 36.5C489.797 35.2879 488.381 34.6818 486.426 34.6818C485.123 34.6818 483.926 34.9621 482.835 35.5227C481.744 36.0833 480.828 36.9015 480.085 37.9773C479.358 39.0379 478.866 40.3182 478.608 41.8182ZM529.716 27.0909L528.511 34.3636H507.466L508.693 27.0909H529.716ZM514.83 18.7273H524.511L519.102 51.2727C518.951 52.1667 518.973 52.8636 519.17 53.3636C519.367 53.8485 519.693 54.1894 520.148 54.3864C520.617 54.5833 521.178 54.6818 521.83 54.6818C522.284 54.6818 522.746 54.6439 523.216 54.5682C523.686 54.4773 524.042 54.4091 524.284 54.3636L524.648 61.5682C524.102 61.7348 523.367 61.9167 522.443 62.1136C521.534 62.3106 520.458 62.4318 519.216 62.4773C516.852 62.5682 514.852 62.2576 513.216 61.5455C511.58 60.8182 510.405 59.7045 509.693 58.2045C508.981 56.7045 508.83 54.8182 509.239 52.5455L514.83 18.7273Z"
+            fill="#00888C"
+          />
+          <path
+            d="M30.68 46L51.92 67"
+            stroke="#00888C"
+            stroke-width="4"
+            stroke-linecap="round"
+          />
+          <path
+            d="M8.50223 68.4062C7.71676 69.1828 6.44326 69.1828 5.65778 68.4062C4.87231 67.6296 4.87231 66.3704 5.65778 65.5938L8.50223 68.4062ZM29.7422 47.4062L8.50223 68.4062L5.65778 65.5938L26.8978 44.5938L29.7422 47.4062Z"
+            fill="#00888C"
+          />
+          <rect y="11" width="59" height="47.8333" fill="#005A5D" />
+          <ellipse cx="15.34" cy="39" rx="11.8" ry="11.6667" fill="#00888C" />
+          <rect y="11" width="59" height="9.33333" fill="#00D3DA" />
+          <rect
+            x="31.86"
+            y="29.6667"
+            width="5.9"
+            height="19.8333"
+            fill="#00B6BD"
+          />
+          <rect
+            x="40.12"
+            y="36.6667"
+            width="5.9"
+            height="12.8333"
+            fill="#00888C"
+          />
+          <rect
+            x="48.38"
+            y="33.1667"
+            width="5.9"
+            height="16.3333"
+            fill="#027175"
+          />
+        </svg>
+      </div>
+      <div
+        id="hgs"
+        style="
+          color: #fff8;
+          position: fixed;
+          right: 1rem;
+          top: 1rem;
+          display: flex;
+          gap: 0.5rem;
+          cursor: pointer;
+        "
+      >
+        <i class="material-icons">help</i> Help and Getting Started
+      </div>
+      <h1 style="text-align: center; margin-bottom: 1rem">
+        Choose a PDF file to present
+      </h1>
+      <div
+        style="display: flex; margin: 1rem 0; align-items: center; gap: 0.5rem"
+      >
+        <input type="checkbox" id="lscb" /><label
+          for="lscb"
+          style="cursor: pointer"
+        >
+          File will be a slide presentation (wider than it is tall)</label
+        >
+      </div>
+      <input type="file" id="fileselect" accept=".pdf" />
+    </div>
+    <div id="fdcard" style="display: none; align-items: center; gap: 1rem">
+      <button id="prev" class="paddle">
+        <i class="material-icons">chevron_left</i>
+      </button>
+      <div id="canvascontainer" style="overflow: auto; background: white">
+        <canvas id="pdfCanvas" style="display: block"></canvas>
+      </div>
+      <button id="next" class="paddle">
+        <i class="material-icons">chevron_right</i>
+      </button>
+    </div>
+    <dialog id="helpdlg" class="card" style="max-width: 65ch">
+      <div style="display: flex; align-items: center; margin-bottom: 0.5rem">
+        <h2 style="text-align: center; flex-grow: 1">
+          Help and getting started
+        </h2>
+        <button onclick="hideDlg()" class="tpbtn">
+          <i class="material-icons">close</i>
+        </button>
+      </div>
+
+      <p style="margin-bottom: 0.5rem">
+        <b>Present a document or slide presentation:</b> Simply click the
+        teal-colored "Choose File" button and select any PDF file. Must be a PDF
+        file. <b>If you are presenting a slide presentation</b>, it is
+        recommended to check the "File will be a slide presentation (wider than
+        it is tall)" checkbox by clicking the circle outlined in teal before
+        selecting the PDF file.
+      </p>
+      <p style="margin-bottom: 0.5rem">
+        <b> Start over with a new file: </b>
+        Reload the page.
+      </p>
+      <p style="margin-bottom: 0.5rem">
+        <b>Change pages: </b>
+        Use the
+        <i class="material-icons" style="vertical-align: middle"
+          >chevron_left</i
+        >
+        and
+        <i class="material-icons" style="vertical-align: middle"
+          >chevron_right</i
+        >
+        symbols to change which page you're on, if the document/presentation has
+        multiple pages. Otherwise the arrows will simply do nothing.
+      </p>
+
+      <p style="margin-bottom: 0.5rem">
+        <b> Convert a Word document or Powerpoint to PDF: </b>
+        In Word or Powerpoint, first open the document or presentation you want
+        to convert to PDF. Then, click "File" in the top left, click "Export,"
+        and then click "Download as PDF." Alternatively, you can click "File" in
+        the top left, then "Save As," then select "PDF" or "Portable Document"
+        from the "Save as type" or "File type" menu at the bottom of the opened
+        dialog, then click "Save." Your document or presentation will be saved
+        as a PDF in your computer's Downloads or similarly named folder and will
+        be ready to present.
+      </p>
+      <p style="margin-bottom: 1rem">
+        <b> Convert Google Docs/Google Slides to PDF: </b>
+        In Google Docs or Google Slides, open the document you want to convert
+        to PDF, then click "Download" in the menu that opens, then click "PDF
+        Document (.pdf)" or similarly named option. Your document or
+        presentation will be saved as a PDF in your downloads folder, ready to
+        present here.
+      </p>
+
+      <button onclick="hideDlg()" class="tealbutton">OK, Got It</button>
+    </dialog>
+    <script>
+      hgs.onclick = (e) => {
+        helpdlg.showModal();
+      };
+      function hideDlg() {
+        helpdlg.close();
+      }
+      function showToast(message) {
+        const toast = document.createElement("div");
+
+        toast.innerHTML = `
+        <div style="display:flex;width:100%;justify-content:space-between; gap:2rem; align-items:center">
+            <div>${message}</div>
+            <button class="tpbtn"><i  style="vertical-align:middle" class="material-icons">close</i></button>
+        </div>
+        `;
+        toast.style.position = "fixed";
+        toast.style.bottom = "0.5rem";
+        toast.style.background = "#ffdddd";
+        toast.style.padding = "0.5rem";
+        toast.style.borderRadius = "0.75rem";
+        toast.style.border = "2px solid red";
+        toast.querySelector("button").onclick = () => {
+          toast.remove();
+        };
+        document.body.appendChild(toast);
+      }
+      fileselect.addEventListener("change", function (e) {
+        const landscape = lscb.checked;
+        fscard.style.display = "none";
+        fdcard.style.display = "flex";
+        const canvas = document.querySelector("#pdfCanvas");
+        const file = e.target.files[0];
+        const fileReader = new FileReader();
+        if (landscape) {
+          canvascontainer.style.height = "100vh";
+          canvas.style.height = "inherit";
+          next.style.position = "absolute";
+          next.style.right = "0.5rem";
+          prev.style.position = "absolute";
+          prev.style.left = "0.5rem";
+        } else {
+          canvascontainer.style.height = "96vh";
+          canvas.style.width = "60vw";
+        }
+
+        fileReader.onload = function () {
+          const typedarray = new Uint8Array(this.result);
+          pdfjsLib.getDocument(typedarray).promise.then(function (pdf) {
+            const NUMBER_OF_PAGES_IN_DOCUMENT = pdf.numPages;
+            let currentPageNumber = 1;
+            function showPage(num) {
+              pdf
+                .getPage(num)
+                .then(function (page) {
+                  canvas.parentElement.scrollTo(0, 0);
+                  const viewport = page.getViewport({
+                    scale: 3,
+                  });
+                  canvas.height = viewport.height;
+                  canvas.width = viewport.width;
+
+                  const renderContext = {
+                    canvasContext: canvas.getContext("2d"),
+                    viewport: viewport,
+                  };
+                  page.render(renderContext);
+                })
+                .catch((err) => {
+                  showToast("Something went wrong.");
+                });
+            }
+
+            showPage(currentPageNumber);
+
+            next.onclick = function () {
+              if (currentPageNumber < NUMBER_OF_PAGES_IN_DOCUMENT) {
+                currentPageNumber++;
+                showPage(currentPageNumber);
+              }
+            };
+            prev.onclick = function () {
+              currentPageNumber--;
+              if (currentPageNumber == 0) {
+                currentPageNumber = 1;
+              }
+              showPage(currentPageNumber);
+            };
+          });
+        };
+
+        fileReader.readAsArrayBuffer(file);
+      });
+    </script>
+  </body>
+</html>
