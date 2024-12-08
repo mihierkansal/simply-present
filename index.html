@@ -251,7 +251,7 @@
         <i class="material-icons">chevron_left</i>
       </button>
       <div id="canvascontainer" style="overflow: auto; background: white">
-        <canvas id="pdfCanvas" style="display: block"></canvas>
+        <canvas id="pdfcanvas" style="display: block"></canvas>
       </div>
       <button id="next" class="paddle">
         <i class="material-icons">chevron_right</i>
@@ -346,19 +346,18 @@
         const landscape = lscb.checked;
         fscard.style.display = "none";
         fdcard.style.display = "flex";
-        const canvas = document.querySelector("#pdfCanvas");
         const file = e.target.files[0];
         const fileReader = new FileReader();
         if (landscape) {
           canvascontainer.style.height = "100vh";
-          canvas.style.height = "inherit";
+          pdfcanvas.style.height = "inherit";
           next.style.position = "absolute";
           next.style.right = "0.5rem";
           prev.style.position = "absolute";
           prev.style.left = "0.5rem";
         } else {
           canvascontainer.style.height = "96vh";
-          canvas.style.width = "60vw";
+          pdfcanvas.style.width = "60vw";
         }
 
         fileReader.onload = function () {
@@ -370,15 +369,15 @@
               pdf
                 .getPage(num)
                 .then(function (page) {
-                  canvas.parentElement.scrollTo(0, 0);
+                  pdfcanvas.parentElement.scrollTo(0, 0);
                   const viewport = page.getViewport({
                     scale: 3,
                   });
-                  canvas.height = viewport.height;
-                  canvas.width = viewport.width;
+                  pdfcanvas.height = viewport.height;
+                  pdfcanvas.width = viewport.width;
 
                   const renderContext = {
-                    canvasContext: canvas.getContext("2d"),
+                    canvasContext: pdfcanvas.getContext("2d"),
                     viewport: viewport,
                   };
                   page.render(renderContext);
