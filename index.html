@@ -357,52 +357,57 @@
           prev.style.left = "0.5rem";
         } else {
           canvascontainer.style.height = "96vh";
-          pdfcanvas.style.width = "60vw";
+          pdfcanvas.style.width = "80vw";
         }
 
         fileReader.onload = function () {
           const typedarray = new Uint8Array(this.result);
-          pdfjsLib.getDocument(typedarray).promise.then(function (pdf) {
-            const NUMBER_OF_PAGES_IN_DOCUMENT = pdf.numPages;
-            let currentPageNumber = 1;
-            function showPage(num) {
-              pdf
-                .getPage(num)
-                .then(function (page) {
-                  pdfcanvas.parentElement.scrollTo(0, 0);
-                  const viewport = page.getViewport({
-                    scale: 3,
+          pdfjsLib
+            .getDocument(typedarray)
+            .promise.then(function (pdf) {
+              const NUMBER_OF_PAGES_IN_DOCUMENT = pdf.numPages;
+              let currentPageNumber = 1;
+              function showPage(num) {
+                pdf
+                  .getPage(num)
+                  .then(function (page) {
+                    pdfcanvas.parentElement.scrollTo(0, 0);
+                    const viewport = page.getViewport({
+                      scale: window.devicePixelRatio * 2,
+                    });
+                    pdfcanvas.height = viewport.height;
+                    pdfcanvas.width = viewport.width;
+
+                    const renderContext = {
+                      canvasContext: pdfcanvas.getContext("2d"),
+                      viewport: viewport,
+                    };
+                    page.render(renderContext);
+                  })
+                  .catch((err) => {
+                    showToast("Something went wrong.");
                   });
-                  pdfcanvas.height = viewport.height;
-                  pdfcanvas.width = viewport.width;
-
-                  const renderContext = {
-                    canvasContext: pdfcanvas.getContext("2d"),
-                    viewport: viewport,
-                  };
-                  page.render(renderContext);
-                })
-                .catch((err) => {
-                  showToast("Something went wrong.");
-                });
-            }
-
-            showPage(currentPageNumber);
-
-            next.onclick = function () {
-              if (currentPageNumber < NUMBER_OF_PAGES_IN_DOCUMENT) {
-                currentPageNumber++;
-                showPage(currentPageNumber);
               }
-            };
-            prev.onclick = function () {
-              currentPageNumber--;
-              if (currentPageNumber == 0) {
-                currentPageNumber = 1;
-              }
+
               showPage(currentPageNumber);
-            };
-          });
+
+              next.onclick = function () {
+                if (currentPageNumber < NUMBER_OF_PAGES_IN_DOCUMENT) {
+                  currentPageNumber++;
+                  showPage(currentPageNumber);
+                }
+              };
+              prev.onclick = function () {
+                currentPageNumber--;
+                if (currentPageNumber == 0) {
+                  currentPageNumber = 1;
+                }
+                showPage(currentPageNumber);
+              };
+            })
+            .catch((err) => {
+              showToast("Something went wrong. Please reload and try again.");
+            });
         };
 
         fileReader.readAsArrayBuffer(file);
