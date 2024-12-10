@@ -41,8 +41,8 @@
         margin: auto;
         border: 0;
       }
+
       body {
-        overflow: hidden;
         background: rgb(20, 20, 20);
         box-shadow: inset 0 0 200px black;
         width: 100vw;
@@ -234,16 +234,6 @@
       <h1 style="text-align: center; margin-bottom: 1rem">
         Choose a PDF file to present
       </h1>
-      <div
-        style="display: flex; margin: 1rem 0; align-items: center; gap: 0.5rem"
-      >
-        <input type="checkbox" id="lscb" /><label
-          for="lscb"
-          style="cursor: pointer"
-        >
-          File will be a slide presentation (wider than it is tall)</label
-        >
-      </div>
       <input type="file" id="fileselect" accept=".pdf" />
     </div>
     <div id="fdcard" style="display: none; align-items: center; gap: 1rem">
@@ -270,10 +260,7 @@
       <p style="margin-bottom: 0.5rem">
         <b>Present a document or slide presentation:</b> Simply click the
         teal-colored "Choose File" button and select any PDF file. Must be a PDF
-        file. <b>If you are presenting a slide presentation</b>, it is
-        recommended to check the "File will be a slide presentation (wider than
-        it is tall)" checkbox by clicking the circle outlined in teal before
-        selecting the PDF file.
+        file.
       </p>
       <p style="margin-bottom: 0.5rem">
         <b> Start over with a new file: </b>
@@ -343,19 +330,19 @@
         document.body.appendChild(toast);
       }
       fileselect.addEventListener("change", function (e) {
-        const landscape = lscb.checked;
         fscard.style.display = "none";
         fdcard.style.display = "flex";
         const file = e.target.files[0];
         const fileReader = new FileReader();
-        if (landscape) {
+        function handleLandscape() {
           canvascontainer.style.height = "100vh";
           pdfcanvas.style.height = "inherit";
-          next.style.position = "absolute";
+          next.style.position = "fixed";
           next.style.right = "0.5rem";
-          prev.style.position = "absolute";
+          prev.style.position = "fixed";
           prev.style.left = "0.5rem";
-        } else {
+        }
+        function handlePortrait() {
           canvascontainer.style.height = "96vh";
           pdfcanvas.style.width = "80vw";
         }
@@ -377,11 +364,27 @@
                     });
                     pdfcanvas.height = viewport.height;
                     pdfcanvas.width = viewport.width;
-
+                    if (viewport.width > viewport.height) {
+                      handleLandscape();
+                    } else {
+                      handlePortrait();
+                    }
                     const renderContext = {
                       canvasContext: pdfcanvas.getContext("2d"),
                       viewport: viewport,
                     };
+
+                    if (num === NUMBER_OF_PAGES_IN_DOCUMENT) {
+                      page.getTextContent().then(({ items }) => {
+                        const text = items.map((item) => item.str).join("");
+                        if (!text.toLowerCase().includes("thank you")) {
+                          console.log("Oh no last slide");
+                          console.log(text);
+                        } else {
+                          console.log("concluded.");
+                        }
+                      });
+                    }
                     page.render(renderContext);
                   })
                   .catch((err) => {
