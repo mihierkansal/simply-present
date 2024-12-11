@@ -478,10 +478,10 @@
               sizeImgContainerAndCanvasAccordingToOrientation();
 
               function sizeImgContainerAndCanvasAccordingToOrientation() {
-                if (displaycanvas.width > displaycanvas.height) {
-                  handleImageLandscape();
-                } else {
+                if (displaycanvas.width < displaycanvas.height) {
                   handleImagePortrait();
+                } else {
+                  handleImageLandscape();
                 }
               }
               function drawImageBasedOnAngle() {
