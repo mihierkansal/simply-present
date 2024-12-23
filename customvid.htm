@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Custom Video Player</title>
+    <style>
+      #video {
+        width: 600px;
+        margin: 20px auto;
+        display: block;
+      }
+      .controls {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        margin-top: 10px;
+      }
+      button {
+        background-color: #4caf50;
+        color: white;
+        border: none;
+        padding: 10px;
+        margin: 5px;
+        cursor: pointer;
+      }
+      button:hover {
+        background-color: #45a049;
+      }
+      input[type="range"] {
+        width: 300px;
+        margin: 0 10px;
+      }
+      #video-container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="video-container">
+      <input type="file" id="video-input" accept="video/*" />
+      <video id="video" controls>
+        Your browser does not support the video tag.
+      </video>
+      <div class="controls">
+        <button id="play-pause">Play</button>
+        <input type="range" id="seek-bar" value="0" max="100" />
+        <button id="mute">Mute</button>
+        <button id="full-screen">Full-Screen</button>
+      </div>
+    </div>
+
+    <script>
+      const videoInput = document.getElementById("video-input");
+      const video = document.getElementById("video");
+      const playPauseButton = document.getElementById("play-pause");
+      const seekBar = document.getElementById("seek-bar");
+      const muteButton = document.getElementById("mute");
+      const fullScreenButton = document.getElementById("full-screen");
+
+      video.removeAttribute("controls"); // Remove default controls
+
+      videoInput.addEventListener("change", (event) => {
+        const file = event.target.files[0];
+        if (file) {
+          const fileURL = URL.createObjectURL(file);
+          video.src = fileURL;
+        }
+      });
+
+      playPauseButton.addEventListener("click", () => {
+        if (video.paused) {
+          video.play();
+          playPauseButton.textContent = "Pause";
+        } else {
+          video.pause();
+          playPauseButton.textContent = "Play";
+        }
+      });
+
+      seekBar.addEventListener("input", () => {
+        const time = video.duration * (seekBar.value / 100);
+        video.currentTime = time;
+      });
+
+      video.addEventListener("timeupdate", () => {
+        const value = (100 / video.duration) * video.currentTime;
+        seekBar.value = value;
+      });
+
+      muteButton.addEventListener("click", () => {
+        video.muted = !video.muted;
+        muteButton.textContent = video.muted ? "Unmute" : "Mute";
+      });
+
+      fullScreenButton.addEventListener("click", () => {
+        if (video.requestFullscreen) {
+          video.requestFullscreen();
+        } else if (video.mozRequestFullScreen) {
+          video.mozRequestFullScreen();
+        } else if (video.webkitRequestFullscreen) {
+          video.webkitRequestFullscreen();
+        } else if (video.msRequestFullscreen) {
+          video.msRequestFullscreen();
+        }
+      });
+    </script>
+  </body>
+</html>
