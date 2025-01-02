@@ -4,32 +4,34 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Custom Video Player</title>
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/icon?family=Material+Icons"
+    />
     <style>
       #video {
-        width: 600px;
-        margin: 20px auto;
+        height: 80vh;
         display: block;
       }
-      .controls {
+      #controls {
         display: flex;
         justify-content: center;
         align-items: center;
         margin-top: 10px;
+        height: 2rem;
       }
       button {
-        background-color: #4caf50;
         color: white;
         border: none;
-        padding: 10px;
-        margin: 5px;
+        padding: 8px;
+        width: min-content;
         cursor: pointer;
-      }
-      button:hover {
-        background-color: #45a049;
+        background: transparent;
       }
       input[type="range"] {
-        width: 300px;
+        flex-grow: 1;
         margin: 0 10px;
+        accent-color: rgb(111, 225, 225);
       }
       #video-container {
         display: flex;
@@ -41,14 +43,30 @@
   <body>
     <div id="video-container">
       <input type="file" id="video-input" accept="video/*" />
-      <video id="video" controls>
-        Your browser does not support the video tag.
-      </video>
-      <div class="controls">
-        <button id="play-pause">Play</button>
-        <input type="range" id="seek-bar" value="0" max="100" />
-        <button id="mute">Mute</button>
-        <button id="full-screen">Full-Screen</button>
+      <div style="position: relative">
+        <video id="video">Your browser does not support the video tag.</video>
+        <div
+          id="controls"
+          style="
+            position: absolute;
+            bottom: 0;
+            background: #000000e6;
+            width: 100%;
+            transition: all 0.3s;
+          "
+        >
+          <button id="rw10s">
+            <i class="material-icons">replay_10</i>
+          </button>
+          <button id="play-pause">
+            <i class="material-icons">play_arrow</i>
+          </button>
+          <button id="ff10s">
+            <i class="material-icons">forward_10</i>
+          </button>
+          <input type="range" id="seek-bar" value="0" max="100" />
+          <button id="mute"><i class="material-icons">volume_up</i></button>
+        </div>
       </div>
     </div>
 
@@ -58,9 +76,6 @@
       const playPauseButton = document.getElementById("play-pause");
       const seekBar = document.getElementById("seek-bar");
       const muteButton = document.getElementById("mute");
-      const fullScreenButton = document.getElementById("full-screen");
-
-      video.removeAttribute("controls"); // Remove default controls
 
       videoInput.addEventListener("change", (event) => {
         const file = event.target.files[0];
@@ -69,14 +84,25 @@
           video.src = fileURL;
         }
       });
-
+      controls.onmouseenter = () => {
+        controls.style.opacity = "1";
+        controls.onmouseleave = () => {
+          controls.style.opacity = "0";
+          controls.onmouseleave = undefined;
+        };
+      };
       playPauseButton.addEventListener("click", () => {
         if (video.paused) {
           video.play();
-          playPauseButton.textContent = "Pause";
+          setTimeout(() => {
+            controls.style.opacity = "0";
+            console.log("controlsHidingTimeout");
+          }, 300);
+          playPauseButton.innerHTML = "<i class='material-icons'>pause</i>";
         } else {
           video.pause();
-          playPauseButton.textContent = "Play";
+          playPauseButton.innerHTML =
+            "<i class='material-icons'>play_arrow</i>";
         }
       });
 
@@ -88,23 +114,29 @@
       video.addEventListener("timeupdate", () => {
         const value = (100 / video.duration) * video.currentTime;
         seekBar.value = value;
+        if (value === 100) {
+          video.pause();
+          playPauseButton.innerHTML =
+            "<i class='material-icons'>play_arrow</i>";
+        }
+      });
+      ff10s.addEventListener("click", () => {
+        const FORWARD_DURATION = 10;
+        video.currentTime += FORWARD_DURATION;
+        seekBar.value += FORWARD_DURATION / video.duration;
       });
 
+      rw10s.addEventListener("click", () => {
+        const REWIND_DURATION = 10;
+        console.log(video.duration);
+        video.currentTime -= REWIND_DURATION;
+        seekBar.value -= REWIND_DURATION / video.duration;
+      });
       muteButton.addEventListener("click", () => {
         video.muted = !video.muted;
-        muteButton.textContent = video.muted ? "Unmute" : "Mute";
-      });
-
-      fullScreenButton.addEventListener("click", () => {
-        if (video.requestFullscreen) {
-          video.requestFullscreen();
-        } else if (video.mozRequestFullScreen) {
-          video.mozRequestFullScreen();
-        } else if (video.webkitRequestFullscreen) {
-          video.webkitRequestFullscreen();
-        } else if (video.msRequestFullscreen) {
-          video.msRequestFullscreen();
-        }
+        muteButton.innerHTML = video.muted
+          ? '<i class="material-icons">volume_off</i>'
+          : '<i class="material-icons">volume_up</i>';
       });
     </script>
   </body>

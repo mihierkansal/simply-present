@@ -204,6 +204,36 @@
           transform: rotate(360deg);
         }
       }
+      #video {
+        height: 99vh;
+        max-width: 100vw;
+        display: block;
+      }
+      #controls {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 2rem;
+        overflow: hidden;
+      }
+      .clbutton {
+        color: white;
+        border: none;
+        padding: 8px;
+        width: min-content;
+        cursor: pointer;
+        background: transparent;
+      }
+      input[type="range"] {
+        flex-grow: 1;
+        margin: 0 10px;
+        accent-color: rgb(111, 225, 225);
+      }
+      #video-container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+      }
     </style>
   </head>
   <body>
@@ -278,7 +308,11 @@
       <h1 style="text-align: left; margin-bottom: 1rem; max-width: 28rem">
         Choose a PDF file, PowerPoint presentation, or image to present
       </h1>
-      <input type="file" id="fileselect" accept=".pdf, .pptx, image/*" />
+      <input
+        type="file"
+        id="fileselect"
+        accept=".pdf, .pptx, image/*, video/*"
+      />
     </div>
     <div id="fdcard" style="display: none; align-items: center; gap: 1rem">
       <button id="prev" class="paddle">
@@ -428,6 +462,9 @@
         const isPptx =
           file.type ===
           "application/vnd.openxmlformats-officedocument.presentationml.presentation";
+        const isVideo = file.type.includes("video/");
+        const isImage = file.type.includes("image/");
+
         function handlePdfLandscape() {
           canvascontainer.style.height = "99.4vh";
           displaycanvas.style.height = "inherit";
@@ -499,20 +536,37 @@
               }
 
               showPage(currentPageNumber);
-
-              next.onclick = function () {
+              function increment() {
                 if (currentPageNumber < NUMBER_OF_PAGES_IN_DOCUMENT) {
                   currentPageNumber++;
                   showPage(currentPageNumber);
                 }
-              };
-              prev.onclick = function () {
+              }
+              function decrement() {
                 currentPageNumber--;
                 if (currentPageNumber == 0) {
                   currentPageNumber = 1;
                 }
                 showPage(currentPageNumber);
+              }
+
+              next.onclick = () => {
+                increment();
               };
+              prev.onclick = () => {
+                decrement();
+              };
+
+              window.addEventListener("keyup", (e) => {
+                e.preventDefault();
+                if (e.key === "ArrowLeft") {
+                  decrement();
+                }
+                if (e.key === "ArrowRight") {
+                  increment();
+                }
+                return false;
+              });
             })
             .catch((err) => {
               showToast("Something went wrong. Please reload and try again.");
@@ -525,36 +579,6 @@
             displayPDF(pdfjsLib.getDocument(typedarray));
           };
           fileReader.readAsArrayBuffer(file);
-        } else if (isDocx) {
-          var docData = file;
-          var d = document.createElement("div");
-          d.style.display = "none";
-          document.body.appendChild(d);
-          docx.renderAsync(docData, d, null).then((x) => {
-            console.log("docx: finished");
-            console.log(d.innerHTML);
-            convertToPdf(d.querySelector(".docx"));
-          });
-          function convertToPdf(container) {
-            container.style.width = "100%";
-            html2pdf()
-              .from(container.outerHTML)
-              .set({
-                jsPDF: {
-                  unit: "in",
-                  format: "letter",
-                  orientation: "portrait",
-                },
-              })
-              .output("arraybuffer")
-              .then(function (pdfArrayBuffer) {
-                const uint8Array = new Uint8Array(pdfArrayBuffer);
-                displayPDF(pdfjsLib.getDocument(uint8Array));
-              })
-              .catch((error) => {
-                console.error("Error in html2pdf:", error);
-              });
-          }
         } else if (isPptx) {
           fileReader.onload = function (e) {
             const formData = new FormData();
@@ -587,8 +611,107 @@
               });
           };
           fileReader.readAsArrayBuffer(file);
-        } else {
+        } else if (isVideo) {
+          loader.style.display = "none";
+          //Don't want to show previous/next buttons for video
+          prev.style.display = "none";
+          next.style.display = "none";
+
+          canvascontainer.style.height = "99vh";
+          canvascontainer.innerHTML = `
+            <div style="position: relative">
+        <video id="video">Your browser does not support the video tag.</video>
+        <div
+          id="controls"
+          style="
+            position: absolute;
+            bottom: 0;
+            background: #000000e6;
+            width: 100%;
+            transition: all 0.3s;
+          "
+        >
+          <button class="clbutton"id="rw10s">
+            <i class="material-icons">replay_10</i>
+          </button>
+          <button class="clbutton" id="play-pause">
+            <i class="material-icons">play_arrow</i>
+          </button>
+          <button class="clbutton" id="ff10s">
+            <i class="material-icons">forward_10</i>
+          </button>
+          <input type="range" id="seek-bar" value="0" max="100" />
+          <button class="clbutton" id="mute"><i class="material-icons">volume_up</i></button>
+        </div>
+      </div>
+          `;
+          const videoInput = document.getElementById("video-input");
+          const video = document.getElementById("video");
+          const playPauseButton = document.getElementById("play-pause");
+          const seekBar = document.getElementById("seek-bar");
+          const muteButton = document.getElementById("mute");
+
+          const fileURL = URL.createObjectURL(file);
+          video.src = fileURL;
+
+          controls.onmouseenter = () => {
+            controls.style.opacity = "1";
+            controls.onmouseleave = () => {
+              controls.style.opacity = "0";
+              controls.onmouseleave = undefined;
+            };
+          };
+          playPauseButton.addEventListener("click", () => {
+            if (video.paused) {
+              video.play();
+              setTimeout(() => {
+                controls.style.opacity = "0";
+                console.log("controlsHidingTimeout");
+              }, 300);
+              playPauseButton.innerHTML = "<i class='material-icons'>pause</i>";
+            } else {
+              video.pause();
+              playPauseButton.innerHTML =
+                "<i class='material-icons'>play_arrow</i>";
+            }
+          });
+
+          seekBar.addEventListener("input", () => {
+            const time = video.duration * (seekBar.value / 100);
+            video.currentTime = time;
+          });
+
+          video.addEventListener("timeupdate", () => {
+            const value = (100 / video.duration) * video.currentTime;
+            seekBar.value = value;
+            if (value === 100) {
+              video.pause();
+              controls.style.opacity = 1;
+              playPauseButton.innerHTML =
+                "<i class='material-icons'>play_arrow</i>";
+            }
+          });
+          ff10s.addEventListener("click", () => {
+            const FORWARD_DURATION = 10;
+            video.currentTime += FORWARD_DURATION;
+            seekBar.value += FORWARD_DURATION / video.duration;
+          });
+
+          rw10s.addEventListener("click", () => {
+            const REWIND_DURATION = 10;
+            console.log(video.duration);
+            video.currentTime -= REWIND_DURATION;
+            seekBar.value -= REWIND_DURATION / video.duration;
+          });
+          muteButton.addEventListener("click", () => {
+            video.muted = !video.muted;
+            muteButton.innerHTML = video.muted
+              ? '<i class="material-icons">volume_off</i>'
+              : '<i class="material-icons">volume_up</i>';
+          });
+        } else if (isImage) {
           fileReader.onload = function () {
+            loader.style.display = "none";
             let img = new Image();
             img.src = this.result;
             img.onload = function () {
@@ -643,6 +766,10 @@
             };
           };
           fileReader.readAsDataURL(file);
+        } else {
+          showToast(
+            "This format is not supported. You shouldn't have been allowed to select that file. Please contact Mihier."
+          );
         }
       });
     </script>
