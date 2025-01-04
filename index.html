@@ -451,6 +451,13 @@
         document.body.appendChild(toast);
       }
       fileselect.addEventListener("change", function (e) {
+        try {
+          document.documentElement.requestFullscreen();
+        } catch {
+          //just swallow, we don't want to crash app.
+          //May happen due to user not allowing fullscreen.
+        }
+
         fscard.style.display = "none";
         fdcard.style.display = "flex";
         const file = e.target.files[0];
