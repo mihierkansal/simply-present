@@ -452,7 +452,10 @@
       }
       fileselect.addEventListener("change", function (e) {
         try {
-          document.documentElement.requestFullscreen();
+          document.documentElement.requestFullscreen().catch(() => {
+            //just swallow, we don't want to crash app.
+            //May happen due to user not allowing fullscreen.
+          });
         } catch {
           //just swallow, we don't want to crash app.
           //May happen due to user not allowing fullscreen.
