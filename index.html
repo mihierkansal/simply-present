@@ -101,7 +101,7 @@
         background: rgb(0, 65, 65);
       }
       .paddle {
-        background: #fff2;
+        background: #0005;
         cursor: pointer;
         font-size: 2rem;
         border: 0;
@@ -111,13 +111,13 @@
         z-index: 2;
         display: flex;
         align-items: center;
-        transition: all 0.1s;
+        transition: all 0.3s;
       }
       .paddle:hover {
-        background: #fff4;
+        background: #0007;
       }
       .paddle:active {
-        background: #fff6;
+        background: #0009;
       }
       .paddle *::before {
         content: "";
@@ -127,13 +127,11 @@
         right: 0;
         bottom: 0;
         background: inherit;
-        filter: invert(1) grayscale(1);
         z-index: -1;
       }
       .paddle * {
         position: relative;
         color: #fffc;
-        mix-blend-mode: difference;
       }
 
       input[type="checkbox"] {
@@ -234,6 +232,9 @@
         flex-direction: column;
         align-items: center;
       }
+      .hidden {
+        opacity: 0;
+      }
     </style>
   </head>
   <body>
@@ -306,7 +307,7 @@
         <i class="material-icons">help</i> Help and Getting Started
       </div>
       <h1 style="text-align: left; margin-bottom: 1rem; max-width: 28rem">
-        Choose a PDF file, PowerPoint presentation, or image to present
+        Choose a PDF file, PowerPoint presentation, video, or image to present
       </h1>
       <input
         type="file"
@@ -369,10 +370,10 @@
         </div>
         <div style="height: 63vh; overflow: auto; margin-bottom: 0.5rem">
           <p style="margin-bottom: 0.5rem">
-            <b>Present a document, image, or slide presentation:</b> Simply
-            click the teal-colored "Choose File" button and select any PDF file,
-            PowerPoint presentation (.pptx), or image. PDF is recommended
-            though.
+            <b>Present a document, image, video, or slide presentation:</b>
+            Simply click the teal-colored "Choose File" button and select any
+            PDF file, PowerPoint presentation (.pptx), video, or image. PDF is
+            recommended though.
           </p>
           <p style="margin-bottom: 0.5rem">
             <b> Start over with a new file: </b>
@@ -389,7 +390,10 @@
               >chevron_right</i
             >
             symbols to change which page you're on, if the document/presentation
-            has multiple pages. Otherwise the arrows will simply do nothing.
+            has multiple pages. Otherwise the arrows will simply do nothing. If
+            you do not see them and what you are presenting is indeed a
+            document/slideshow (not an image or video), move your mouse around a
+            bit until they appear.
           </p>
 
           <p style="margin-bottom: 0.5rem">
@@ -506,7 +510,32 @@
             .then(function (pdf) {
               loader.style.display = "none";
               const NUMBER_OF_PAGES_IN_DOCUMENT = pdf.numPages;
+              const ARROW_HIDE_MSECS = 900;
               let currentPageNumber = 1;
+              const hideArrows = () => {
+                if (!prev.classList.contains("hidden")) {
+                  prev.classList.add("hidden");
+                  next.classList.add("hidden");
+                }
+              };
+              const showArrows = () => {
+                if (prev.classList.contains("hidden")) {
+                  prev.classList.remove("hidden");
+                  next.classList.remove("hidden");
+                }
+              };
+              let hidingArrowTimeout = setTimeout(() => {
+                hideArrows();
+              }, ARROW_HIDE_MSECS);
+              function handleActivity() {
+                showArrows();
+                clearTimeout(hidingArrowTimeout);
+                hidingArrowTimeout = setTimeout(() => {
+                  hideArrows();
+                }, ARROW_HIDE_MSECS);
+              }
+              canvascontainer.addEventListener("mousemove", handleActivity);
+              window.addEventListener("click", handleActivity);
               function showPage(num) {
                 pdf
                   .getPage(num)
@@ -544,7 +573,6 @@
                     showToast("Something went wrong.");
                   });
               }
-
               showPage(currentPageNumber);
               function increment() {
                 if (currentPageNumber < NUMBER_OF_PAGES_IN_DOCUMENT) {
