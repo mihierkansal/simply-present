@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Glossy Buttons from 2009</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        text-align: center;
+        margin-top: 50px;
+      }
+
+      .button {
+        display: inline-block;
+        padding: 10px 20px;
+        margin: 10px;
+        font-size: 16px;
+        color: white;
+        background: #4caf50; /* Green */
+        border: none;
+        border-radius: 10px;
+        text-decoration: none;
+        text-shadow: 1px 1px 2px #000;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+        background: linear-gradient(to bottom, #4caf50 0%, #45a049 100%);
+        transition: background 0.2s ease-in-out;
+      }
+
+      .button:hover {
+        background: linear-gradient(to bottom, #45a049 0%, #4caf50 100%);
+      }
+
+      .button:active {
+        background: linear-gradient(to bottom, #3e8e41 0%, #4caf50 100%);
+        box-shadow: 0 2px 3px rgba(0, 0, 0, 0.2);
+        transform: translateY(2px);
+      }
+    </style>
+  </head>
+  <body>
+    <a href="#" class="button">Click Me!</a>
+    <a href="#" class="button">Another Button</a>
+  </body>
+</html>
