@@ -390,10 +390,11 @@
               >chevron_right</i
             >
             symbols to change which page you're on, if the document/presentation
-            has multiple pages. Otherwise the arrows will simply do nothing. If
-            you do not see them and what you are presenting is indeed a
-            document/slideshow (not an image or video), move your mouse around a
-            bit until they appear.
+            has multiple pages. To proceed to the next page/slide, you may also
+            click anywhere on the slide. Otherwise the arrows will simply do
+            nothing. If you do not see them and what you are presenting is
+            indeed a document/slideshow (not an image or video), move your mouse
+            around a bit until they appear.
           </p>
 
           <p style="margin-bottom: 0.5rem">
@@ -594,7 +595,7 @@
               prev.onclick = () => {
                 decrement();
               };
-
+              displaycanvas.addEventListener("click", increment);
               window.addEventListener("keyup", (e) => {
                 e.preventDefault();
                 if (e.key === "ArrowLeft") {
